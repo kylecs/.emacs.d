@@ -316,7 +316,8 @@
 (setq corfu-auto t
       corfu-quit-no-match 'separator) ;; or t
 
-(use-package magit)
+;; TODO learn how to use this
+;; (use-package magit)
 
 
 
