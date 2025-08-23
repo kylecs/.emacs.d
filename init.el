@@ -15,6 +15,7 @@
 (which-key-mode 1)
 (pixel-scroll-precision-mode 1)
 (setopt flymake-show-diagnostics-at-end-of-line t)
+(setopt tab-width 4)
 
 ;; Save my fingers
 (setopt mac-option-modifier 'super)
@@ -77,8 +78,20 @@
 ;; fix fringe color
 (set-face-attribute 'fringe nil :background nil)
 
-;; (use-package doom-modeline
-;;   :init (doom-modeline-mode 1))
+(use-package indent-bars
+  :hook ((yaml-ts-mode go-ts-mode) . indent-bars-mode))
+(setopt
+  indent-bars-color '(highlight :face-bg t :blend 0.2)
+  indent-bars-pattern "."
+  indent-bars-width-frac 0.1
+  indent-bars-pad-frac 0.1
+  indent-bars-zigzag nil
+  indent-bars-color-by-depth nil
+  indent-bars-highlight-current-depth nil
+  indent-bars-display-on-blank-lines nil)
+
+(use-package doom-modeline
+  :init (doom-modeline-mode 1))
 
 (use-package nerd-icons)
 
@@ -87,19 +100,41 @@
   (dashboard-setup-startup-hook))
 
 ;;;; vim mode setup
+
+;; prereq
+(use-package undo-tree
+  :config
+  (global-undo-tree-mode))
+
+(defun kyle/edit-init ()
+  "Open init.el file for quick edits."
+  (interactive)
+  (find-file user-init-file))
+
 (use-package evil-leader
   :config
   (global-evil-leader-mode 1)
   (evil-leader/set-leader "<SPC>")
   (evil-leader/set-key
-    "e" 'find-file
+	"f" '("file" . (keymap))
+    "f f" 'find-file
+    "f c" 'kyle/edit-init
+
+    "d" 'dired-jump
     "b" 'consult-buffer
     "B" 'consult-bookmark
-    "w |" 'evil-window-vsplit
-    "w -" 'evil-window-split
-    "c a" 'lsp-execute-code-action)
+
+	"w" '("window" . (keymap))
+    "w v" 'evil-window-vsplit
+    "w h" 'evil-window-split
+    "w d" 'delete-window
+
+	"c" '("code" . (keymap))
+    "c a" 'lsp-execute-code-action
+    "c c" 'comment-region)
   ;; golang test running
   (evil-leader/set-key-for-mode 'go-ts-mode
+	"c t" '("test" . (keymap))
     "c t t" 'go-ts-mode-test-function-at-point
     "c t f" 'go-ts-mode-test-this-file
     "c t p" 'go-ts-mode-test-this-package)
@@ -107,7 +142,10 @@
 
 (use-package evil
   :config
+  (setopt evil-undo-system 'undo-tree)
   (evil-mode 1))
+
+(evil-define-key 'normal lsp-mode-map (kbd "K") 'lsp-describe-thing-at-point)
 
 ;; better navigation
 (global-set-key (kbd "M-h") 'evil-window-left)
@@ -284,6 +322,7 @@
          (go-ts-mode . lsp)
          (lsp-mode . lsp-enable-which-key-integration))
   :commands lsp)
+(setopt lsp-format-buffer-on-save t)
 
 ;; completion ui
 (use-package corfu
@@ -316,18 +355,36 @@
 (setq corfu-auto t
       corfu-quit-no-match 'separator) ;; or t
 
+(use-package treesit-auto
+  :custom
+  (treesit-auto-install 'prompt)
+  :config
+  (treesit-auto-add-to-auto-mode-alist 'all)
+  (global-treesit-auto-mode))
+
+;; typst support, trustworthy?
+(use-package typst-ts-mode
+  :vc (:url "https://codeberg.org/meow_king/typst-ts-mode.git"))
+
+
 ;; TODO learn how to use this
 ;; (use-package magit)
-
-
-
-
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages nil))
+ '(custom-safe-themes
+   '("4130a9efe19a6a298ebb86a09652511ffed35c4fd611ad3028b47dcea1f756f4"
+	 default))
+ '(package-selected-packages
+   '(consult corfu dashboard diminish doom-modeline doom-themes
+			 evil-leader exec-path-from-shell indent-bars lsp-mode
+			 magit marginalia orderless treesit-auto typst-ts-mode
+			 undo-tree vertico))
+ '(package-vc-selected-packages
+   '((typst-ts-mode :url
+					"https://codeberg.org/meow_king/typst-ts-mode.git"))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
