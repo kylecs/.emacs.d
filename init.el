@@ -111,6 +111,8 @@
   (interactive)
   (find-file user-init-file))
 
+(setq evil-want-keybinding nil)
+
 (use-package evil-leader
   :config
   (global-evil-leader-mode 1)
@@ -145,7 +147,26 @@
   (setopt evil-undo-system 'undo-tree)
   (evil-mode 1))
 
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init))
+
 (evil-define-key 'normal lsp-mode-map (kbd "K") 'lsp-describe-thing-at-point)
+
+;; custom normal keybinds to do vertical navigation faster
+(defun kyle/down-5 ()
+  "Go down 5 lines"
+  (interactive)
+  (evil-next-line 5))
+
+(defun kyle/up-5 ()
+  "Go up 5 lines"
+  (interactive)
+  (evil-previous-line 5))
+
+(keymap-set evil-normal-state-map (kbd "J") 'kyle/down-5)
+(keymap-set evil-normal-state-map (kbd "K") 'kyle/up-5)
 
 ;; better navigation
 (global-set-key (kbd "M-h") 'evil-window-left)
@@ -160,11 +181,11 @@
   ;; :custom
   ;; (vertico-scroll-margin 0) ;; Different scroll margin
   ;; (vertico-count 20) ;; Show more candidates
-  ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
+  ;; (Vertico-resize t) ;; Grow and shrink the Vertico minibuffer
   ;; (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
    :bind (:map vertico-map
-   	      ("C-j" . vertico-next)
-   	      ("C-k" . vertico-previous))
+   	      ("M-j" . vertico-next)
+   	      ("M-k" . vertico-previous))
    
   :init
   (vertico-mode)
@@ -378,10 +399,10 @@
    '("4130a9efe19a6a298ebb86a09652511ffed35c4fd611ad3028b47dcea1f756f4"
 	 default))
  '(package-selected-packages
-   '(consult corfu dashboard diminish doom-modeline doom-themes
-			 evil-leader exec-path-from-shell indent-bars lsp-mode
-			 magit marginalia orderless treesit-auto typst-ts-mode
-			 undo-tree vertico))
+   '(annalist consult corfu dashboard diminish doom-modeline doom-themes
+			  evil-collection evil-leader exec-path-from-shell
+			  indent-bars lsp-mode magit marginalia orderless
+			  treesit-auto typst-ts-mode undo-tree vertico))
  '(package-vc-selected-packages
    '((typst-ts-mode :url
 					"https://codeberg.org/meow_king/typst-ts-mode.git"))))
@@ -391,3 +412,5 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+(toggle-frame-maximized)
