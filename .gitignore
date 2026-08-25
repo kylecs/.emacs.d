@@ -1,0 +1,24 @@
+# Emacs temporary and backup files
+*~
+\#*\#
+.#*
+*.elc
+
+# Installed packages and native compilation cache
+/elpa/
+/eln-cache/
+/.cache/
+
+# Runtime state
+/auto-save-list/
+/eshell/
+/persist/
+/var/
+/bookmarks
+/history
+/projects
+/recentf
+/tramp
+
+# macOS
+.DS_Store
