@@ -107,6 +107,12 @@
   :init
   (global-auto-revert-mode 1))
 
+(use-package project
+  :ensure nil
+  :custom
+  ;; After selecting a project, open its root without a second dispatcher.
+  (project-switch-commands 'project-dired))
+
 (use-package activities
   :ensure t
   :functions (activities-mode activities-tabs-mode activities-named
@@ -384,7 +390,7 @@
     "a n" '(activities-new :which-key "new activity")
     "a d" '(activities-define :which-key "define activity")
     "a r" '(activities-resume :which-key "resume activity")
-    "a a" '(activities-switch :which-key "switch activity")
+    "a a" '(activities-resume :which-key "select activity")
     "a s" '(activities-suspend :which-key "suspend activity")
     "a b" '(activities-switch-buffer :which-key "activity buffer")
     "a g" '(activities-revert :which-key "revert activity")
