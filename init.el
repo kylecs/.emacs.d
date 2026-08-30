@@ -47,13 +47,17 @@
 			 t)
 	    (flymake-mode 1)))
 
-;; setup backup dirs
+;; setup persistent state dirs
 (let ((backup-dir (expand-file-name "var/backups/" user-emacs-directory))
-      (autosave-dir (expand-file-name "var/auto-save/" user-emacs-directory)))
+      (autosave-dir (expand-file-name "var/auto-save/" user-emacs-directory))
+      (undo-dir (expand-file-name "var/undo-fu-session/"
+                                  user-emacs-directory)))
   (make-directory backup-dir t)
   (make-directory autosave-dir t)
+  (make-directory undo-dir t)
   (setopt backup-directory-alist `(("." . ,backup-dir))
-          auto-save-file-name-transforms `((".*" ,autosave-dir t))))
+          auto-save-file-name-transforms `((".*" ,autosave-dir t))
+          undo-fu-session-directory undo-dir))
 
 ;;;; Builtin Package Config
 (use-package flymake
@@ -243,6 +247,20 @@
   (setopt xref-show-xrefs-function #'consult-xref
           xref-show-definitions-function #'consult-xref))
 
+(use-package embark
+  :ensure t
+  :commands (embark-act embark-dwim embark-bindings)
+  :bind
+  (("C-." . embark-act)
+   ("M-." . embark-dwim)
+   ("C-h B" . embark-bindings)))
+
+(use-package embark-consult
+  :ensure t
+  :after (embark consult)
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
 (use-package prescient
   :ensure t
   :functions prescient-persist-mode
@@ -289,6 +307,12 @@
   (setq evil-want-C-u-scroll t)
   :config
   (evil-mode 1))
+
+(use-package undo-fu-session
+  :ensure t
+  :functions undo-fu-session-global-mode
+  :config
+  (undo-fu-session-global-mode 1))
 
 ;;;; IDE Config
 (use-package activities
@@ -440,6 +464,8 @@
    "C-k" #'windmove-up
    "C-l" #'windmove-right
    "C-h" #'windmove-left
+   "C-." #'embark-act
+   "M-." #'embark-dwim
    "S-<right>" #'which-key-show-next-page-cycle
    "S-<left>" #'which-key-show-previous-page-cycle)
   (general-define-key
