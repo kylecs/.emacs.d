@@ -3,8 +3,6 @@
 ;;;; Emacs Config
 
 ;;;; Basic Emacs Config
-(setopt use-package-always-ensure t)
-
 (use-package package
   :ensure nil
 
@@ -323,37 +321,49 @@
       (insert (propertize "\n    --- No activities ---"
                           'face 'dashboard-no-items-face)))))
 
-(use-package treemacs
+(use-package dirvish
   :ensure t
-  :commands
-  (treemacs
-   treemacs-find-file
-   treemacs-add-and-display-current-project)
+  :commands dirvish-side
+  :functions dirvish-override-dired-mode dirvish-side-follow-mode
+  dirvish-side--session-visible-p dirvish-quit
+  :defines dirvish-mode-map dirvish-reuse-session
 
-  :functions treemacs-follow-mode treemacs-filewatch-mode
+  :preface
+  (defun kyle/dirvish-side-toggle ()
+    "Toggle the Dirvish sidebar regardless of the selected window."
+    (interactive)
+    (if-let ((sidebar (dirvish-side--session-visible-p)))
+        (let ((origin (selected-window)))
+          ;; Keep the index buffer, including its subtree overlays, so the
+          ;; next toggle can resume the same sidebar session.
+          (let ((dirvish-reuse-session t))
+            (with-selected-window sidebar
+              (dirvish-quit)))
+          (when (window-live-p origin)
+            (select-window origin)))
+      (dirvish-side)))
 
-  :hook
-  (treemacs-mode . (lambda ()
-                     (display-line-numbers-mode -1)
-                     ;; Keep an empty mode line as an active-window indicator.
-                     (setq-local mode-line-format '(" "))))
+  (defun kyle/dirvish-side-disable-line-numbers (buffer)
+    "Disable line numbers in Dirvish side BUFFER."
+    (with-current-buffer buffer
+      (display-line-numbers-mode -1)))
+
+  :init
+  (add-to-list 'load-path (concat user-emacs-directory "elpa/dirvish-2.3.0"))
+  (add-to-list 'load-path (concat user-emacs-directory "elpa/dirvish-2.3.0/extensions"))
+  (require 'dirvish)
+  (require 'dirvish-side)
+  (require 'dirvish-history)
+  (dirvish-override-dired-mode)
 
   :custom
-  (treemacs-width 32)
-
-  (treemacs-show-hidden-files t)
-
-  ;; Use Treemacs's plain text fallbacks instead of graphical file icons.
-  (treemacs-no-png-images t)
+  ;; Let windmove enter and leave the sidebar like an ordinary window.
+  (dirvish-side-window-parameters '((no-delete-other-windows . t)))
 
   :config
-  (treemacs-follow-mode 1)
-
-  (treemacs-filewatch-mode 1))
-
-(use-package treemacs-evil
-  :ensure t
-  :after (treemacs evil))
+  (advice-add 'dirvish-side-root-conf :after
+              #'kyle/dirvish-side-disable-line-numbers)
+  (dirvish-side-follow-mode 1))
 
 (use-package ghostel
   :ensure t
@@ -418,6 +428,8 @@
   :ensure t
   :after evil
   :functions general-define-key general-create-definer kyle/leader
+  kyle/tab-previous kyle/tab-next dirvish-subtree-toggle
+  dirvish-history-go-backward dirvish-history-go-forward
   :defines kyle/leader
   :config
   (general-define-key
@@ -427,7 +439,9 @@
    "C-j" #'windmove-down
    "C-k" #'windmove-up
    "C-l" #'windmove-right
-   "C-h" #'windmove-left)
+   "C-h" #'windmove-left
+   "S-<right>" #'which-key-show-next-page-cycle
+   "S-<left>" #'which-key-show-previous-page-cycle)
   (general-define-key
    :states '(normal visual emacs)
    "H" #'kyle/tab-previous
@@ -435,6 +449,18 @@
   (general-define-key
    :states '(normal visual)
    "gc" #'comment-line)
+  (general-define-key
+   :keymaps 'which-key-C-h-map
+   "<right>" #'which-key-show-next-page-cycle
+   "<left>" #'which-key-show-previous-page-cycle)
+  (general-define-key
+   :states 'normal
+   :keymaps 'dirvish-mode-map
+   "<tab>" #'dirvish-subtree-toggle
+   "H" #'kyle/tab-previous
+   "L" #'kyle/tab-next
+   "M-h" #'dirvish-history-go-backward
+   "M-l" #'dirvish-history-go-forward)
   (general-create-definer kyle/leader
 			  :states '(normal visual insert motion emacs)
 			  :keymaps 'override
@@ -445,6 +471,7 @@
     ":" '(execute-extended-command :which-key "M-x")
     "." '(find-file :which-key "find file")
     "," '(consult-buffer :which-key "switch buffer")
+    "?" '(which-key-show-top-level :which-key "show active keybindings")
     "u" '(universal-argument :which-key "universal argument")
 
     ;; Files.
@@ -519,12 +546,8 @@
     "s d" '(consult-flymake :which-key "diagnostics")
     "s m" '(consult-mark :which-key "marks")
 
-    ;; Sidebar
-    "e" '(treemacs :which-key "toggle project tree")
-    "E"   '(:ignore t :which-key "project tree")
-    "E f" '(treemacs-find-file :which-key "find current file")
-    "E a" '(treemacs-add-and-display-current-project
-	    :which-key "add current project")
+    ;; Sidebar.
+    "e" '(kyle/dirvish-side-toggle :which-key "toggle project tree")
 
     ;; Terminals.
     "t"   '(:ignore t :which-key "terminal")
