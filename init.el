@@ -33,7 +33,6 @@
   (set-face-attribute 'default nil :height 160)
   (global-display-line-numbers-mode 1)
   (keymap-global-unset "<pinch>")
-  (global-completion-preview-mode 1)
   (electric-pair-mode 1)
   (show-paren-mode 1)
   (minibuffer-depth-indicate-mode 1)
@@ -265,6 +264,31 @@ The forced redisplay can block indefinitely in `ns_flush_display' on macOS."
   :init
   (marginalia-mode 1))
 
+(use-package corfu
+  :ensure t
+  :functions global-corfu-mode
+  :defines corfu-map corfu-continue-commands
+  :bind
+  (:map corfu-map
+        ("C-j" . corfu-next)
+        ("C-k" . corfu-previous)
+        ("<escape>" . corfu-quit)
+        ("TAB" . corfu-complete)
+        ("<tab>" . corfu-complete))
+  :custom
+  (corfu-auto t)
+  (corfu-auto-delay 0.1)
+  (corfu-auto-prefix 2)
+  (corfu-cycle t)
+  (corfu-preselect 'first)
+  :init
+  (global-corfu-mode 1)
+  :config
+  (add-to-list 'corfu-continue-commands
+               #'kyle/corfu-next-or-window-down)
+  (add-to-list 'corfu-continue-commands
+               #'kyle/corfu-previous-or-window-up))
+
 (use-package consult
   :ensure t
   :commands
@@ -489,20 +513,40 @@ The forced redisplay can block indefinitely in `ns_flush_display' on macOS."
    "C-<escape>" #'kyle/ghostel-send-escape))
 
 ;;;; Keybinding Config
+(defun kyle/corfu-active-p ()
+  "Return non-nil while Corfu is handling an active completion session."
+  (and (bound-and-true-p corfu-mode)
+       (bound-and-true-p completion-in-region-mode)))
+
+(defun kyle/corfu-next-or-window-down ()
+  "Select the next Corfu candidate, or move to the window below."
+  (interactive)
+  (if (kyle/corfu-active-p)
+      (corfu-next)
+    (windmove-down)))
+
+(defun kyle/corfu-previous-or-window-up ()
+  "Select the previous Corfu candidate, or move to the window above."
+  (interactive)
+  (if (kyle/corfu-active-p)
+      (corfu-previous)
+    (windmove-up)))
+
 (use-package general
   :ensure t
   :after evil
   :functions general-define-key general-create-definer kyle/leader
   kyle/tab-previous kyle/tab-next dirvish-subtree-toggle
-  dirvish-history-go-backward dirvish-history-go-forward
+  dirvish-history-go-backward dirvish-history-go-forward eldoc-doc-buffer
+  kyle/corfu-next-or-window-down kyle/corfu-previous-or-window-up
   :defines kyle/leader
   :config
   (general-define-key
    :states '(normal insert visual motion emacs)
    :keymaps 'override
    "C-s" #'save-buffer
-   "C-j" #'windmove-down
-   "C-k" #'windmove-up
+   "C-j" #'kyle/corfu-next-or-window-down
+   "C-k" #'kyle/corfu-previous-or-window-up
    "C-l" #'windmove-right
    "C-h" #'windmove-left
    "C-." #'embark-act
@@ -516,6 +560,9 @@ The forced redisplay can block indefinitely in `ns_flush_display' on macOS."
   (general-define-key
    :states '(normal visual)
    "gc" #'comment-line)
+  (general-define-key
+   :states 'normal
+   "K" #'eldoc-doc-buffer)
   (general-define-key
    :keymaps 'which-key-C-h-map
    "<right>" #'which-key-show-next-page-cycle
