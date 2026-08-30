@@ -27,6 +27,7 @@
   (global-completion-preview-mode 1)
   (electric-pair-mode 1)
   (show-paren-mode 1)
+  (minibuffer-depth-indicate-mode 1)
 
   :custom
   (ns-command-modifier 'meta)
@@ -35,6 +36,7 @@
   (use-file-dialog nil)
   (ring-bell-function #'ignore)
   (visible-bell nil)
+  (enable-recursive-minibuffers t)
   (pixel-scroll-precision-mode t)
   (scroll-conservatively 999)
   (show-paren-delay 0))
@@ -81,6 +83,9 @@
 
 (use-package autorevert
   :ensure nil
+  :custom
+  (global-auto-revert-non-file-buffers t)
+  (auto-revert-avoid-polling t)
   :init
   (global-auto-revert-mode 1))
 
@@ -203,6 +208,10 @@
   (which-key-idle-delay 0)
   :config
   (which-key-mode 1))
+
+(use-package avy
+  :ensure t
+  :commands avy-goto-char-timer)
 
 ;;;; Completion Ecosystem Config
 (use-package vertico
@@ -498,6 +507,7 @@
     "." '(find-file :which-key "find file")
     "," '(consult-buffer :which-key "switch buffer")
     "?" '(which-key-show-top-level :which-key "show active keybindings")
+    "j" '(avy-goto-char-timer :which-key "jump to visible text")
     "u" '(universal-argument :which-key "universal argument")
 
     ;; Files.
