@@ -499,6 +499,7 @@
 
     ;; Windows.
     "w"   '(:ignore t :which-key "windows")
+    "w t" '(tab-new :which-key "new tab")
     "w h" '(windmove-left :which-key "window left")
     "w j" '(windmove-down :which-key "window down")
     "w k" '(windmove-up :which-key "window up")
