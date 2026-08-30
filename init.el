@@ -7,6 +7,13 @@
 (when (file-exists-p custom-file)
   (load custom-file nil 'nomessage))
 
+;; Avoid an intermittent macOS NS-port stall while Emacs flushes the built-in
+;; startup echo-area message.  Use the runtime login name so this stays
+;; portable; `custom-set-variables' supplies the saved-value marker that the
+;; specially protected startup option requires.
+(custom-set-variables
+ (list 'inhibit-startup-echo-area-message (user-login-name)))
+
 (use-package package
   :ensure nil
 
@@ -179,7 +186,8 @@
 (use-package dashboard
   :ensure t
   :after activities
-  :functions (dashboard-insert-heading dashboard-setup-startup-hook)
+  :functions (dashboard-insert-heading dashboard-setup-startup-hook
+                                       kyle/dashboard-initialize)
   :defines dashboard-item-generators
   :custom
   (dashboard-startup-banner 'ascii)
@@ -206,6 +214,14 @@
      dashboard-insert-newline
      dashboard-insert-items))
   :config
+  (defun kyle/dashboard-initialize (&rest _)
+    "Show Dashboard without its synchronous startup redisplay.
+The forced redisplay can block indefinitely in `ns_flush_display' on macOS."
+    (switch-to-buffer dashboard-buffer-name)
+    (goto-char (point-min))
+    (run-hooks 'dashboard-after-initialize-hook))
+
+  (advice-add 'dashboard-initialize :override #'kyle/dashboard-initialize)
   (add-to-list 'dashboard-item-generators
                '(activities . kyle/dashboard-insert-activities))
   (dashboard-setup-startup-hook))
@@ -408,6 +424,11 @@
 
 (use-package ghostel
   :ensure t
+
+  ;; Codex can leave synchronized-output frames stale until the next keypress.
+  ;; Use the broadly supported terminal profile so it redraws incrementally.
+  :custom
+  (ghostel-term "xterm-256color")
 
   :preface
   (defun kyle/ghostel-new ()
