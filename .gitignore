@@ -8,6 +8,7 @@
 /elpa/
 /eln-cache/
 /.cache/
+/tree-sitter/
 
 # Runtime state
 /auto-save-list/

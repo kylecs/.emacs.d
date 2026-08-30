@@ -49,6 +49,15 @@
   (scroll-conservatively 999)
   (show-paren-delay 0))
 
+;; GUI Emacs may not inherit the login shell's PATH on macOS or Linux.  Import
+;; it so external tools such as rg and gopls are available to Consult and Eglot.
+(use-package exec-path-from-shell
+  :ensure t
+  :if (or (daemonp) (memq window-system '(mac ns x pgtk)))
+  :functions exec-path-from-shell-initialize
+  :init
+  (exec-path-from-shell-initialize))
+
 (defun kyle/emacs-lisp-flymake-setup ()
   "Enable Flymake without checkdoc diagnostics in Emacs Lisp buffers."
   (remove-hook 'flymake-diagnostic-functions
@@ -372,6 +381,32 @@ The forced redisplay can block indefinitely in `ns_flush_display' on macOS."
   (undo-fu-session-global-mode 1))
 
 ;;;; IDE Config
+(use-package treesit
+  :ensure nil
+  :mode (("\\.go\\'" . go-ts-mode)
+         ("\\.\\(?:js\\|mjs\\|cjs\\|jsx\\)\\'" . js-ts-mode)
+         ("\\.ts\\'" . typescript-ts-mode)
+         ("\\.tsx\\'" . tsx-ts-mode))
+  :config
+  ;; Install each grammar once with `M-x treesit-install-language-grammar'.
+  (dolist (source
+           '((go "https://github.com/tree-sitter/tree-sitter-go")
+             (javascript "https://github.com/tree-sitter/tree-sitter-javascript")
+             (typescript "https://github.com/tree-sitter/tree-sitter-typescript"
+                         nil "typescript/src")
+             (tsx "https://github.com/tree-sitter/tree-sitter-typescript"
+                  nil "tsx/src")))
+    (add-to-list 'treesit-language-source-alist source)))
+
+(use-package eglot
+  :ensure nil
+  :commands (eglot eglot-ensure eglot-rename)
+  :hook ((go-ts-mode js-ts-mode typescript-ts-mode tsx-ts-mode)
+         . eglot-ensure)
+  :custom
+  (eglot-autoshutdown t)
+  (eglot-confirm-server-initiated-edits nil))
+
 (use-package activities
   :ensure t
   :functions (activities-mode activities-tabs-mode activities-named
@@ -588,6 +623,11 @@ The forced redisplay can block indefinitely in `ns_flush_display' on macOS."
     "?" '(which-key-show-top-level :which-key "show active keybindings")
     "j" '(avy-goto-char-timer :which-key "jump to visible text")
     "u" '(universal-argument :which-key "universal argument")
+
+    ;; Code navigation and editing.
+    "c"   '(:ignore t :which-key "code")
+    "c r" '(eglot-rename :which-key "rename symbol")
+    "c f" '(xref-find-references :which-key "find references")
 
     ;; Files.
     "f"   '(:ignore t :which-key "files")
