@@ -1,32 +1,47 @@
 ;;; init.el --- my emacs config -*- lexical-binding: t; -*-
 
+;;;; Emacs Config
 
-(menu-bar-mode -1)
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
-(tooltip-mode -1)
+;;;; Basic Emacs Config
+(setopt use-package-always-ensure t)
 
-(setopt use-dialog-box nil
-	use-file-dialog nil
-	ring-bell-function #'ignore
-	visible-bell nil)
+(use-package package
+  :ensure nil
 
-(add-to-list 'default-frame-alist '(left-fringe . 0))
-(add-to-list 'default-frame-alist '(right-fringe . 0))
-(fringe-mode 0)
+  :config
+  (add-to-list 'package-archives
+	       '("melpa" . "https://melpa.org/packages/")))
 
-(set-face-attribute 'default nil :height 160)
+(use-package emacs
+  :ensure nil
 
-(setopt ns-command-modifier 'meta
-	ns-option-modifier 'none)
+  :config
+  (menu-bar-mode -1)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+  (tooltip-mode -1)
+  (add-to-list 'default-frame-alist '(left-fringe . 0))
+  (add-to-list 'default-frame-alist '(right-fringe . 0))
+  (fringe-mode 0)
+  (set-face-attribute 'default nil :height 160)
+  (global-display-line-numbers-mode 1)
+  (keymap-global-unset "<pinch>")
+  (global-completion-preview-mode 1)
+  (electric-pair-mode 1)
+  (show-paren-mode 1)
 
-(global-display-line-numbers-mode 1)
-(setopt pixel-scroll-precision-mode t
-	scroll-conservatively 999)
+  :custom
+  (ns-command-modifier 'meta)
+  (ns-option-modifier 'none)
+  (use-dialog-box nil)
+  (use-file-dialog nil)
+  (ring-bell-function #'ignore)
+  (visible-bell nil)
+  (pixel-scroll-precision-mode t)
+  (scroll-conservatively 999)
+  (show-paren-delay 0))
 
-(keymap-global-unset "<pinch>")
-
-(global-completion-preview-mode 1)
+;; remove checkdoc diagnostics from elisp
 (add-hook 'emacs-lisp-mode-hook
 	  (lambda ()
 	    (remove-hook 'flymake-diagnostic-functions
@@ -34,10 +49,7 @@
 			 t)
 	    (flymake-mode 1)))
 
-(electric-pair-mode 1)
-(show-paren-mode 1)
-(setopt show-paren-delay 0)
-
+;; setup backup dirs
 (let ((backup-dir (expand-file-name "var/backups/" user-emacs-directory))
       (autosave-dir (expand-file-name "var/auto-save/" user-emacs-directory)))
   (make-directory backup-dir t)
@@ -45,50 +57,13 @@
   (setopt backup-directory-alist `(("." . ,backup-dir))
           auto-save-file-name-transforms `((".*" ,autosave-dir t))))
 
-
-(with-eval-after-load 'flymake
-  (setopt flymake-show-diagnostics-at-end-of-line 'short
-	  flymake-no-changes-timeout 0.1))
-
-;; setup package management
-(require 'package)
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/"))
-
-;; disabled for performance
-;; (unless package-archive-contents
-;;  (package-refresh-contents))
-
-(require 'use-package)
-;; end setup package management
-
-(use-package evil
-  :ensure t
-  :functions
-  evil-mode
-  :defines evil-undo-system evil-want-C-u-scroll
-  :init
-  (setq evil-undo-system 'undo-redo)
-  (setq evil-want-C-u-scroll t)
-  :config
-  (evil-mode 1))
-
-(use-package dired
+;;;; Builtin Package Config
+(use-package flymake
   :ensure nil
-  :after evil
-  :defines dired-mode-map
-  :config
-  (evil-define-key 'normal dired-mode-map
-    (kbd "/") #'evil-search-forward
-    (kbd "n") #'evil-search-next
-    (kbd "p") #'evil-search-previous))
 
-(use-package which-key
-  :ensure t
   :custom
-  (which-key-idle-delay 0)
-  :config
-  (which-key-mode 1))
+  (flymake-show-diagnostics-at-end-of-line 'short)
+  (flymake-no-changes-timeout 0.1))
 
 (use-package recentf
   :ensure nil
@@ -113,37 +88,52 @@
   ;; After selecting a project, open its root without a second dispatcher.
   (project-switch-commands 'project-dired))
 
-(use-package activities
-  :ensure t
-  :functions (activities-mode activities-tabs-mode activities-named
-                             activities-names activities-resume)
-  :custom
-  (activities-bookmark-store t)
-  ;; Keep tab-backed activities without displaying the tab bar.
-  (tab-bar-show nil)
-  :init
-  (activities-mode 1)
-  (activities-tabs-mode 1))
+(use-package dired
+  :ensure nil
+  :after evil
+  :defines dired-mode-map
+  :functions evil-define-key evil-search-forward evil-search-next evil-search-previous
+  :config
+  (evil-define-key 'normal dired-mode-map
+    (kbd "/") #'evil-search-forward
+    (kbd "n") #'evil-search-next
+    (kbd "p") #'evil-search-previous))
 
-(defun kyle/dashboard-insert-activities (list-size)
-  "Insert up to LIST-SIZE saved activities into the dashboard."
-  (dashboard-insert-heading "Activities:")
-  (let ((names (seq-take (activities-names) list-size)))
-    (if names
-        (dolist (name names)
-          (insert "\n" (make-string (or standard-indent tab-width 4) ?\s))
-          (widget-create
-           'item
-           :tag name
-           :action (lambda (&rest _)
-                     (activities-resume (activities-named name)))
-           :button-face 'dashboard-items-face
-           :mouse-face 'highlight
-           :button-prefix ""
-           :button-suffix ""
-           :format "%[%t%]"))
-      (insert (propertize "\n    --- No activities ---"
-                          'face 'dashboard-no-items-face)))))
+(use-package savehist
+  :ensure nil
+  :init
+  (savehist-mode 1))
+
+(use-package hideshow
+  :ensure nil
+  :hook (emacs-lisp-mode . hs-minor-mode))
+
+;;;; Visual Packages
+(use-package doom-themes
+  :ensure t
+  :custom
+  (doom-themes-enable-bold t)
+  (doom-themes-enable-italic t)
+  (doom-themes-padded-modeline 4)
+  :config
+  (load-theme 'doom-acario-light t))
+
+(use-package doom-modeline
+  :ensure t
+  :functions doom-modeline-mode
+  :init
+  (doom-modeline-mode 1)
+  :custom
+  (doom-modeline-height 28)
+  (doom-modeline-bar-width 3)
+  (doom-modeline-icon nil)
+  (doom-modeline-major-mode-icon nil)
+  (doom-modeline-buffer-state-icon nil)
+  (doom-modeline-buffer-file-name-style 'file-name)
+  (doom-modeline-modal t)
+  (doom-modeline-check 'simple)
+  (doom-modeline-minor-modes nil)
+  (doom-modeline-buffer-encoding nil))
 
 (use-package dashboard
   :ensure t
@@ -179,11 +169,14 @@
                '(activities . kyle/dashboard-insert-activities))
   (dashboard-setup-startup-hook))
 
-(use-package savehist
-  :ensure nil
-  :init
-  (savehist-mode 1))
+(use-package which-key
+  :ensure t
+  :custom
+  (which-key-idle-delay 0)
+  :config
+  (which-key-mode 1))
 
+;;;; Completion Ecosystem Config
 (use-package vertico
   :ensure t
   :functions vertico-mode
@@ -249,7 +242,7 @@
   (vertico-prescient-mode 1))
 
 (use-package vertico-multiform
-  :ensure nil
+  :ensure nil ;; builtin to vertico
   :after (vertico vertico-prescient)
   :functions vertico-multiform-mode
   :defines vertico-multiform-commands
@@ -260,6 +253,51 @@
        . prescient-completion-sort))))
   :config
   (vertico-multiform-mode 1))
+
+;;;; Evil btw
+(use-package evil
+  :ensure t
+  :functions
+  evil-mode
+  :defines evil-undo-system evil-want-C-u-scroll
+  :init
+  (setq evil-undo-system 'undo-redo)
+  (setq evil-want-C-u-scroll t)
+  :config
+  (evil-mode 1))
+
+;;;; IDE Config
+(use-package activities
+  :ensure t
+  :functions (activities-mode activities-tabs-mode activities-named
+                             activities-names activities-resume)
+  :custom
+  (activities-bookmark-store t)
+  ;; Keep tab-backed activities without displaying the tab bar.
+  (tab-bar-show nil)
+  :init
+  (activities-mode 1)
+  (activities-tabs-mode 1))
+
+(defun kyle/dashboard-insert-activities (list-size)
+  "Insert up to LIST-SIZE saved activities into the dashboard."
+  (dashboard-insert-heading "Activities:")
+  (let ((names (seq-take (activities-names) list-size)))
+    (if names
+        (dolist (name names)
+          (insert "\n" (make-string (or standard-indent tab-width 4) ?\s))
+          (widget-create
+           'item
+           :tag name
+           :action (lambda (&rest _)
+                     (activities-resume (activities-named name)))
+           :button-face 'dashboard-items-face
+           :mouse-face 'highlight
+           :button-prefix ""
+           :button-suffix ""
+           :format "%[%t%]"))
+      (insert (propertize "\n    --- No activities ---"
+                          'face 'dashboard-no-items-face)))))
 
 (use-package treemacs
   :ensure t
@@ -296,6 +334,17 @@
 (use-package ghostel
   :ensure t
 
+  :preface
+  (defun kyle/ghostel-new ()
+    "Create a new Ghostel terminal instance."
+    (interactive)
+    (ghostel t))
+
+  (defun kyle/ghostel-project-new ()
+    "Create a new Ghostel terminal instance for the current project."
+    (interactive)
+    (ghostel-project t))
+
   :commands
   (ghostel
    ghostel-other
@@ -308,14 +357,6 @@
    ghostel-clear-scrollback)
 
   :defines ghostel-keymap-exceptions
-
-  :custom
-  (ghostel-buffer-name-function
-   (lambda (title)
-     (format "*%s*"
-             (or title
-                 (file-name-nondirectory
-                  (directory-file-name default-directory))))))
 
   :hook
   (ghostel-mode . (lambda ()
@@ -332,14 +373,26 @@
 
 (use-package evil-ghostel
   :ensure t
-  :after (ghostel evil)
-  :functions evil-ghostel-mode
+  :after (ghostel evil general)
+  :functions evil-ghostel-mode general-define-key ghostel-send-key kyle/ghostel-send-escape
+  :defines evil-ghostel-mode-map
   :custom
   (evil-ghostel-initial-state 'insert)
+  (evil-ghostel-escape 'evil)
   :hook
-  (ghostel-mode . evil-ghostel-mode))
+  (ghostel-mode . evil-ghostel-mode)
+  :config
+  (defun kyle/ghostel-send-escape ()
+    "Send a bare escape key to the terminal."
+    (interactive)
+    (ghostel-send-key "escape"))
 
-;; keybindings
+  (general-define-key
+   :states '(normal insert visual motion operator replace emacs)
+   :keymaps 'evil-ghostel-mode-map
+   "C-<escape>" #'kyle/ghostel-send-escape))
+
+;;;; Keybinding Config
 (use-package general
   :ensure t
   :after evil
@@ -427,6 +480,7 @@
     "w r" '(evil-window-rotate-downwards :which-key "rotate windows counter clockwise")
     "w R" '(evil-window-rotate-upwards :which-key "rotate windows clockwise")
     "w =" '(balance-windows :which-key "balance windows")
+    "w z" '(maximize-window :which-key "maximize window")
 
     ;; Search
     "s"   '(:ignore t :which-key "search")
@@ -450,8 +504,8 @@
     "t t" '(ghostel-other :which-key "open terminal")
 
     ;; Explicitly create new terminals.
-    "t n" '(ghostel :which-key "new terminal")
-    "t p" '(ghostel-project :which-key "new project terminal")
+    "t n" '(kyle/ghostel-new :which-key "new terminal")
+    "t p" '(kyle/ghostel-project-new :which-key "new project terminal")
 
     ;; Select from existing terminals.
     "t b" '(ghostel-list-buffers :which-key "terminal buffers")
@@ -480,41 +534,13 @@
     "q" '(:ignore t :which-key "quit emacs")
     "q q" '(evil-quit-all :which-key "confirm quit emacs")))
 
-(use-package doom-themes
-  :ensure t
-  :custom
-  (doom-themes-enable-bold t)
-  (doom-themes-enable-italic t)
-  (doom-themes-padded-modeline 4)
-  :config
-  (load-theme 'doom-acario-light t))
-
-(use-package doom-modeline
-  :ensure t
-  :functions doom-modeline-mode
-  :init
-  (doom-modeline-mode 1)
-  :custom
-  (doom-modeline-height 28)
-  (doom-modeline-bar-width 3)
-  (doom-modeline-icon nil)
-  (doom-modeline-major-mode-icon nil)
-  (doom-modeline-buffer-state-icon nil)
-  (doom-modeline-buffer-file-name-style 'file-name)
-  (doom-modeline-modal t)
-  (doom-modeline-check 'simple)
-  (doom-modeline-minor-modes nil)
-  (doom-modeline-buffer-encoding nil))
-
-;; auto added section
+;;;; Autogenerated
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(consult dashboard doom-modeline doom-themes evil-ghostel general
-	     marginalia orderless treemacs-evil vertico-prescient)))
+ '(package-selected-packages nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
