@@ -138,6 +138,11 @@
     (interactive "p")
     (kyle/tab-move-no-wrap (- (or arg 1)))))
 
+(use-package winner
+  :ensure nil
+  :init
+  (winner-mode 1))
+
 ;;;; Visual Packages
 (use-package doom-themes
   :ensure t
@@ -571,6 +576,8 @@
     "w w" '(other-window :which-key "next window")
     "w r" '(evil-window-rotate-downwards :which-key "rotate windows counter clockwise")
     "w R" '(evil-window-rotate-upwards :which-key "rotate windows clockwise")
+    "w u" '(winner-undo :which-key "undo window layout")
+    "w U" '(winner-redo :which-key "redo window layout")
     "w =" '(balance-windows :which-key "balance windows")
     "w z" '(maximize-window :which-key "maximize window")
 
