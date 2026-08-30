@@ -135,7 +135,7 @@
 
 (use-package tab-bar
   :ensure nil
-  :functions tab-bar--current-tab-index tab-bar-select-tab
+  :functions tab-bar--current-tab-index tab-bar-select-tab kyle/tab-move-no-wrap
   :defines tab-bar-tabs-function
   :config
   (defun kyle/tab-move-no-wrap (offset)
