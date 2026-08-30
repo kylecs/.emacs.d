@@ -384,10 +384,7 @@
 
   :hook
   (ghostel-mode . (lambda ()
-		    (display-line-numbers-mode -1)
-                    ;; Precision scrolling can overshoot the live terminal's
-                    ;; bottom edge and fight Ghostel's viewport anchoring.
-                    (setq-local pixel-scroll-precision-mode nil)))
+		    (display-line-numbers-mode -1)))
 
   :config
   (setopt ghostel-keymap-exceptions
