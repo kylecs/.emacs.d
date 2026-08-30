@@ -108,6 +108,29 @@
   :ensure nil
   :hook (emacs-lisp-mode . hs-minor-mode))
 
+(use-package tab-bar
+  :ensure nil
+  :functions tab-bar--current-tab-index tab-bar-select-tab
+  :defines tab-bar-tabs-function
+  :config
+  (defun kyle/tab-move-no-wrap (offset)
+    "Move OFFSET tabs without wrapping at either end."
+    (let* ((tabs (funcall tab-bar-tabs-function))
+           (current (tab-bar--current-tab-index tabs))
+           (target (+ current offset)))
+      (when (<= 0 target (1- (length tabs)))
+        (tab-bar-select-tab (1+ target)))))
+
+  (defun kyle/tab-next (&optional arg)
+    "Switch forward ARG tabs without wrapping."
+    (interactive "p")
+    (kyle/tab-move-no-wrap (or arg 1)))
+
+  (defun kyle/tab-previous (&optional arg)
+    "Switch backward ARG tabs without wrapping."
+    (interactive "p")
+    (kyle/tab-move-no-wrap (- (or arg 1)))))
+
 ;;;; Visual Packages
 (use-package doom-themes
   :ensure t
@@ -116,7 +139,10 @@
   (doom-themes-enable-italic t)
   (doom-themes-padded-modeline 4)
   :config
-  (load-theme 'doom-acario-light t))
+  (load-theme 'doom-acario-light t)
+  (set-face-attribute 'tab-bar-tab nil
+                      :background (face-background 'mode-line nil t)
+                      :foreground (face-foreground 'mode-line nil t)))
 
 (use-package doom-modeline
   :ensure t
@@ -273,8 +299,6 @@
                              activities-names activities-resume)
   :custom
   (activities-bookmark-store t)
-  ;; Keep tab-backed activities without displaying the tab bar.
-  (tab-bar-show nil)
   :init
   (activities-mode 1)
   (activities-tabs-mode 1))
@@ -407,6 +431,13 @@
    "C-k" #'windmove-up
    "C-l" #'windmove-right
    "C-h" #'windmove-left)
+  (general-define-key
+   :states '(normal visual emacs)
+   "H" #'kyle/tab-previous
+   "L" #'kyle/tab-next)
+  (general-define-key
+   :states '(normal visual)
+   "gc" #'comment-line)
   (general-create-definer kyle/leader
 			  :states '(normal visual insert motion emacs)
 			  :keymaps 'override
@@ -530,6 +561,10 @@
     "h c" '(describe-char :which-key "describe character")
     "h o" '(describe-symbol :which-key "describe symbol")
     "h i" '(info :which-key "open Info manuals")
+    "h r" '((lambda ()
+               (interactive)
+               (load-file user-init-file))
+             :which-key "reload config")
 
     "q" '(:ignore t :which-key "quit emacs")
     "q q" '(evil-quit-all :which-key "confirm quit emacs")))
