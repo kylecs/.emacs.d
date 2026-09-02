@@ -153,13 +153,12 @@
     (interactive "p")
     (kyle/tab-move-no-wrap (- (or arg 1))))
 
-  (defun kyle/delete-window-or-tab (&optional window)
-    "Delete WINDOW, or close its tab when it is the tab's only window."
+  (defun kyle/delete-window-or-tab ()
+    "Delete the selected window, or close its tab when it is the only window."
     (interactive)
-    (let ((window (or window (selected-window))))
-      (if (one-window-p t)
-          (tab-close)
-        (delete-window window))))
+    (if (one-window-p t)
+        (tab-close)
+      (delete-window (selected-window))))
 
   (global-set-key [remap delete-window] #'kyle/delete-window-or-tab))
 
