@@ -23,7 +23,7 @@
   (scroll-bar-mode -1)
   (tooltip-mode -1)
   (fringe-mode 0)
-  (set-face-attribute 'default nil :height 160)
+  (set-face-attribute 'default nil :family "Iosevka" :height 180)
   (global-display-line-numbers-mode 1)
   (keymap-global-unset "<pinch>")
   (electric-pair-mode 1)
@@ -128,8 +128,12 @@
 
 (use-package tab-bar
   :ensure nil
-  :functions tab-bar--current-tab-index tab-bar-select-tab kyle/tab-move-no-wrap
+  :functions tab-bar--current-tab-index tab-bar-select-tab kyle/tab-move-no-wrap kyle/delete-window-or-tab
+  tab-close dashboard-open
   :defines tab-bar-tabs-function
+  :custom
+  (tab-bar-new-tab-choice #'dashboard-open)
+  (tab-bar-new-button-show nil)
   :config
   (defun kyle/tab-move-no-wrap (offset)
     "Move OFFSET tabs without wrapping at either end."
@@ -147,7 +151,17 @@
   (defun kyle/tab-previous (&optional arg)
     "Switch backward ARG tabs without wrapping."
     (interactive "p")
-    (kyle/tab-move-no-wrap (- (or arg 1)))))
+    (kyle/tab-move-no-wrap (- (or arg 1))))
+
+  (defun kyle/delete-window-or-tab (&optional window)
+    "Delete WINDOW, or close its tab when it is the tab's only window."
+    (interactive)
+    (let ((window (or window (selected-window))))
+      (if (one-window-p t)
+          (tab-close)
+        (delete-window window))))
+
+  (global-set-key [remap delete-window] #'kyle/delete-window-or-tab))
 
 (use-package winner
   :ensure nil
@@ -573,6 +587,10 @@
    "S-<right>" #'which-key-show-next-page-cycle
    "S-<left>" #'which-key-show-previous-page-cycle)
   (general-define-key
+   :states 'insert
+   :keymaps 'override
+   "M-v" #'yank)
+  (general-define-key
    :states '(normal visual emacs)
    "H" #'kyle/tab-previous
    "L" #'kyle/tab-next)
@@ -668,7 +686,7 @@
     "w l" '(windmove-right :which-key "window right")
     "w v" '(split-window-right :which-key "split right")
     "w s" '(split-window-below :which-key "split below")
-    "w d" '(delete-window :which-key "delete window")
+    "w d" '(kyle/delete-window-or-tab :which-key "delete window or tab")
     "w o" '(delete-other-windows :which-key "delete other windows")
     "w w" '(other-window :which-key "next window")
     "w r" '(evil-window-rotate-downwards :which-key "rotate windows counter clockwise")
