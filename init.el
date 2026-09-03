@@ -526,7 +526,7 @@
 (use-package evil-ghostel
   :ensure t
   :after (ghostel evil general)
-  :functions evil-ghostel-mode general-define-key ghostel-send-key kyle/ghostel-send-escape
+  :functions evil-ghostel-mode general-define-key ghostel-send-key
   :defines evil-ghostel-mode-map
   :custom
   (evil-ghostel-initial-state 'insert)
@@ -538,6 +538,22 @@
     "Send a bare escape key to the terminal."
     (interactive)
     (ghostel-send-key "escape"))
+
+  (defun kyle/ghostel-send-up ()
+    "Send an up-arrow key to the terminal."
+    (interactive)
+    (ghostel-send-key "up"))
+
+  (defun kyle/ghostel-send-down ()
+    "Send a down-arrow key to the terminal."
+    (interactive)
+    (ghostel-send-key "down"))
+
+  (general-define-key
+   :states 'normal
+   :keymaps 'evil-ghostel-mode-map
+   "<up>" #'kyle/ghostel-send-up
+   "<down>" #'kyle/ghostel-send-down)
 
   (general-define-key
    :states '(normal insert visual motion operator replace emacs)
