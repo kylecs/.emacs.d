@@ -552,6 +552,7 @@
   (general-define-key
    :states 'normal
    :keymaps 'evil-ghostel-mode-map
+   "<escape>" #'kyle/ghostel-send-escape
    "<up>" #'kyle/ghostel-send-up
    "<down>" #'kyle/ghostel-send-down)
 
